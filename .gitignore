@@ -1,0 +1,4 @@
+build/
+dist/
+svox/*.so
+**/__pycache__

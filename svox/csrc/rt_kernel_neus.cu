@@ -250,6 +250,8 @@ __device__ __inline__ void trace_ray(
             out[j] = 0.f;
         }
         scalar_t pos[3];
+        scalar_t pos_prev[3];
+        scalar_t pos_next[3];
         scalar_t basis_fn[25];
         maybe_precalc_basis<scalar_t>(opt.format, opt.basis_dim,
                 tree.extra_data, ray.vdir, basis_fn);
@@ -258,6 +260,7 @@ __device__ __inline__ void trace_ray(
         scalar_t t = tmin;
         scalar_t cube_sz;
         const scalar_t d_rgb_pad = 1 + 2 * opt.rgb_padding;
+        const scalar_t inv_s = 9636.8477f;
         while (t < tmax) {
             for (int j = 0; j < 3; ++j) {
                 pos[j] = ray.origin[j] + t * ray.dir[j];
@@ -266,17 +269,33 @@ __device__ __inline__ void trace_ray(
             scalar_t* tree_val = query_single_from_root<scalar_t>(tree.data, tree.child,
                         pos, &cube_sz, tree.weight_accum != nullptr ? &node_id : nullptr);
 
-            scalar_t att;
+            // scalar_t att;
+            scalar_t alpha;
             scalar_t subcube_tmin, subcube_tmax;
             _dda_unit(pos, invdir, &subcube_tmin, &subcube_tmax);
 
             const scalar_t t_subcube = (subcube_tmax - subcube_tmin) / cube_sz;
             const scalar_t delta_t = t_subcube + opt.step_size;
-            scalar_t sigma = tree_val[data_dim - 1];
+
+            // scalar_t sigma = tree_val[data_dim - 1];
             // if (opt.density_softplus) sigma = _SOFTPLUS_M1(sigma);
-            if (sigma > opt.sigma_thresh) {
-                att = expf(-delta_t * delta_scale * sigma);
-                const scalar_t weight = light_intensity * (1.f - att);
+            for (int j = 0; j < 3; ++j) {
+                pos_prev[j] = ray.origin[j] + (t - delta_t * 0.5f) * ray.dir[j];
+                pos_next[j] = ray.origin[j] + (t + delta_t * 0.5f) * ray.dir[j];
+            }
+            
+            scalar_t* tree_prev_val = query_single_from_root<scalar_t>(tree.data, tree.child,
+                        pos_prev, &cube_sz, nullptr);
+
+            scalar_t* tree_next_val = query_single_from_root<scalar_t>(tree.data, tree.child,
+                        pos_next, &cube_sz, nullptr);
+
+            if (true) { //(sigma > opt.sigma_thresh) {
+                alpha = (_SIGMOID(inv_s * tree_prev_val[data_dim - 1]) - _SIGMOID(inv_s * tree_next_val[data_dim - 1]) + 1e-5) / (_SIGMOID(inv_s * tree_prev_val[data_dim - 1]) + 1e-5);
+                if (alpha < 0) {alpha = 0;} else if (alpha > 1) {alpha = 1;}
+                // att = expf(-delta_t * delta_scale * sigma);
+                // const scalar_t weight = light_intensity * (1.f - att);
+                const scalar_t weight = light_intensity * alpha;
 
                 if (opt.format != FORMAT_RGBA) {
                     for (int t = 0; t < out_data_dim; ++ t) {
@@ -293,7 +312,8 @@ __device__ __inline__ void trace_ray(
                         out[j] += weight * tree_val[j];
                     }
                 }
-                light_intensity *= att;
+                // light_intensity *= att;
+                light_intensity *= (1.f - alpha + 1e-7);
 
                 if (tree.weight_accum != nullptr) {
                     if (tree.weight_accum_max) {
