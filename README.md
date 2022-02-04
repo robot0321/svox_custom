@@ -1,39 +1,27 @@
-# PlenOctrees: PyTorch CUDA Extension
+# SVOX custom: customize the rendering method following NeRF and NeuS
 
-This repository contains a differentiable PlenOctree and renderer implementation
-as a PyTorch CUDA extension. It is used by our conversion and optimization code.
+Folked from the repository <https://github.com/sxyu/svox>
 
-PlenOctrees for Real Time Rendering of Neural Radiance Fields<br>
-Alex Yu, Ruilong Li, Matthew Tancik, Hao Li, Ren Ng, Angjoo Kanazawa
+* I customize the `trace_ray` function in `svox/csrc/rt_kernel.cu` file.
+https://github.com/robot0321/svox_custom/blob/4d923d506dd3e54085136964888513e7b28463fe/svox/csrc/rt_kernel.cu#L222-L321
 
-https://alexyu.net/plenoctrees
+* This code is not complete since I only fixed the forward function (**only for customized rendering, not training**)
 
-```
-@inproceedings{yu2021plenoctrees,
-      title={{PlenOctrees} for Real-time Rendering of Neural Radiance Fields},
-      author={Alex Yu and Ruilong Li and Matthew Tancik and Hao Li and Ren Ng and Angjoo Kanazawa},
-      year={2021},
-      booktitle={ICCV},
-}
-```
+* Whenever you change the library code, do uninstall and re-install. (There is dev-mode but I did not use it)
 
-Please also refer to the following repositories
+* `svox/csrc/rt_kernel_neus.cu` is for NeuS and `svox/csrc/rt_kernel.cu` is for NeRF
 
-- NeRF-SH training and PlenOctree extraction: <https://github.com/sxyu/plenoctree>
-- C++ volume renderer <https://github.com/sxyu/volrend>
+* Note that the file named `svox/csrc/rt_kernel.cu` is used in this library. If you want to change, swap the name of files.
 
-## Installation
-`pip install svox`
+### Install
+~~~sh
+python setup.py install
+~~~
 
-## Documentation
+### Uninstall
+~~~sh
+pip uninstall svox
+~~~
+
+### Documentation
 Please see <https://svox.readthedocs.io>
-
-## Troubleshooting
-If you get SIGSEGV upon importing,
-check that your CUDA runtime and PyTorch CUDA versions match.  That is,
-`nvcc --version`
-should match (Python)
-`torch.version.cuda`
-
-## Misc
-SVOX stands for **s**parse **v**oxel **o**ctree e**x**tension.
