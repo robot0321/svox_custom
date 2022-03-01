@@ -179,11 +179,11 @@ class VolumeRenderer(nn.Module):
         else:
             warn("Legacy N3Tree (pre 0.2.18) without data_format, auto-infering SH deg")
             # Auto SH deg
-            ddim = tree.data_dim
-            if ddim == 4:
-                self._data_format = DataFormat("")
-            else:
-                self._data_format = DataFormat(f"SH{(ddim - 1) // 3}")
+            # ddim = tree.data_dim
+            # if ddim == 4:
+            self._data_format = DataFormat("")
+            # else:
+            #     self._data_format = DataFormat(f"SH{(ddim - 1) // 3}")
         self.tree._weight_accum = None
 
     def forward(self, rays : Rays, cuda=True, fast=False):

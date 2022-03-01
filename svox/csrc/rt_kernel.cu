@@ -230,7 +230,7 @@ __device__ __inline__ void trace_ray(
     scalar_t tmin, tmax;
     scalar_t invdir[3];
     const int tree_N = tree.child.size(1);
-    const int data_dim = tree.data.size(4);
+    const int data_dim = 4; //tree.data.size(4);
     const int out_data_dim = out.size(0);
 
 #pragma unroll
@@ -1010,7 +1010,7 @@ __host__ int get_out_data_dim(int format, int basis_dim, int in_data_dim) {
     if (format != FORMAT_RGBA) {
         return (in_data_dim - 1) / basis_dim;
     } else {
-        return in_data_dim - 1;
+        return 3; //in_data_dim - 1; # if format=RGBA, set out_dim=3
     }
 }
 
